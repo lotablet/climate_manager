@@ -87,7 +87,7 @@ bash <(curl -sSL https://climate-manager.duckdns.org:8443/install.sh)
 ### 🔑 Setup Iniziale (Tutto tramite UI)
 
 1. **Credenziali di accesso**:
-   - Email e password dell'account Climate Manager
+   - Email e password dell'account Climate Manager (credenziali fornite durante l'acquisto)
    - Selezione lingua interfaccia (Italiano/English)
    - Selezione entità climatizzatore principale
 
@@ -348,6 +348,6 @@ MIT License - Vedi [LICENSE](LICENSE) per dettagli.
 ---
 
 ## 🔗 Link Utili
-
+- ✉️ Email: lore.tavola@gmail.com
 - 🎛️ [Alexa Media Player](https://github.com/custom-components/alexa_media_player)
 - 🐛 [Issues GitHub](https://github.com/LoTableT/climate-manager/issues)
