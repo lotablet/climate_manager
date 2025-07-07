@@ -344,10 +344,6 @@ logger:
 2. Descrivi caso d'uso dettagliato
 3. Fornisci esempi
 
-## 📄 Licenza
-
-MIT License - Vedi [LICENSE](LICENSE) per dettagli.
-
 ---
 
 ## 🔗 Link Utili
