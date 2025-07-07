@@ -347,6 +347,6 @@ logger:
 ---
 
 ## 🔗 Link Utili
-- ✉️ Email: lore.tavola@gmail.com
+- ✉️ Email: [lore.tavola@gmail.com](mailto:lore.tavola@gmail.com)
 - 🎛️ [Alexa Media Player](https://github.com/custom-components/alexa_media_player)
 - 🐛 [Issues GitHub](https://github.com/LoTableT/climate_manager/issues)
