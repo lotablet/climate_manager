@@ -6,6 +6,8 @@
 
 **Climate Manager** è un'integrazione completa per Home Assistant che fornisce **gestione completamente automatica** dei sistemi di climatizzazione. Una volta configurata, l'integrazione gestisce autonomamente tutti gli aspetti del controllo clima senza necessità di automazioni aggiuntive.
 
+Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [Riccardo Rizzaroli](https://www.tiktok.com/@riccardorizzardi) che senza di voi questo custom  component non sarebbe stato possibile ❤️
+
 ---
 
 ## 📋 Indice
@@ -20,12 +22,13 @@
 - [🐛 Risoluzione Problemi](#-risoluzione-problemi)
 - [🤝 Contribuire](#-contribuire)
 
-## Requisiti
+## Requisiti Obbligatori per l'utilizzo
 
-### Obbligatori
-
-* **Entità climate** pienamente funzionante al **100%** in Home Assistant (stato ON/OFF affidabile).
+* E' richiesta **Entità climate** pienamente funzionante al **100%** in Home Assistant (stato ON/OFF affidabile).
+  - Potete aggiungere un binary_sensor oppure un sensore che misura la potenza del climatizzatore come "trigger" di accensione.
 * **Sensori finestra** (`binary_sensor` con `device_class: window` o `door`).
+
+Per favore verifica questi requisiti prima di acquistare il custom-component!
 
 ### Facoltativo
 
