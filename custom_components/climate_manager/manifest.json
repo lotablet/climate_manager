@@ -1,0 +1,14 @@
+{
+  "domain": "climate_manager",
+  "name": "Climate Manager",
+  "version": "1.0.8",
+  "config_flow": true,
+  "requirements": ["aiofiles"],
+  "dependencies": [],
+  "codeowners": ["@LoTableT"],
+  "iot_class": "local_push",
+  "multi_instance": true,
+  "integration_type": "device",
+  "loggers": ["climate_manager"],
+  "icon": "mdi:thermostat"
+}
