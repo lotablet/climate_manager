@@ -1,7 +1,7 @@
 # 🏠 Climate Manager - Gestione Intelligente del Clima
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)](https://github.com/LoTableT/climate-manager)
+[![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)](https://github.com/LoTableT/climate_manager)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **Climate Manager** è un'integrazione completa per Home Assistant che fornisce **gestione completamente automatica** dei sistemi di climatizzazione. Una volta configurata, l'integrazione gestisce autonomamente tutti gli aspetti del controllo clima senza necessità di automazioni aggiuntive.
@@ -336,7 +336,7 @@ logger:
 ## 🤝 Contribuire
 
 ### **Segnalare Bug**
-1. Apri [issue su GitHub](https://github.com/LoTableT/climate-manager/issues)
+1. Apri [issue su GitHub](https://github.com/LoTableT/climate_manager/issues)
 2. Includi: versione HA, versione Climate Manager, log, configurazione
 
 ### **Proposte Funzionalità**
@@ -349,4 +349,4 @@ logger:
 ## 🔗 Link Utili
 - ✉️ Email: lore.tavola@gmail.com
 - 🎛️ [Alexa Media Player](https://github.com/custom-components/alexa_media_player)
-- 🐛 [Issues GitHub](https://github.com/LoTableT/climate-manager/issues)
+- 🐛 [Issues GitHub](https://github.com/LoTableT/climate_manager/issues)
