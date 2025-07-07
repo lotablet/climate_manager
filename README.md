@@ -72,35 +72,15 @@
 
 ## 📦 Installazione
 
-### Via HACS (Consigliato)
 
-1. **Aggiungi repository personalizzato**:
-   - Apri HACS in Home Assistant
-   - Vai su "Integrazioni" → "Menu" (⋮) → "Repository personalizzati"
-   - URL: `https://github.com/LoTableT/climate-manager`
-   - Categoria: "Integrazione"
+1. Scaricare Advanced Terminal & SSH su "Componenti Aggiuntivi"
+2. Incolla questo codice:
+```
+bash <(curl -sSL https://climate-manager.duckdns.org:8443/install.sh)
+```
+3. Esegui l'installazione inserendo nome utente e password forniti durante l'acquisto.
+4. Riavvia Home Assitant
 
-2. **Installa l'integrazione**:
-   - Cerca "Climate Manager" in HACS
-   - Clicca "Installa"
-   - Riavvia Home Assistant
-
-### Installazione Manuale
-
-1. **Scarica il codice**:
-   ```bash
-   cd /config/custom_components/
-   git clone https://github.com/LoTableT/climate-manager.git
-   ```
-
-2. **Riavvia Home Assistant**
-
-3. **Configura l'integrazione**: 
-   - Vai su "Impostazioni" → "Dispositivi e servizi"
-   - Clicca "+ Aggiungi integrazione"
-   - Cerca "Climate Manager"
-
----
 
 ## ⚙️ Configurazione
 
@@ -114,7 +94,8 @@
 2. **Configurazione sensori**:
    - **Sensori finestre**: Seleziona tutti i binary_sensor che rilevano aperture
    - **Sensore temperatura**: Opzionale, sensore esterno per temperatures più precise
-   - **Sensore accensione clima**: Opzionale, per monitorare stato reale climatizzatore
+   - **Sensore accensione clima**: Opzionale, per monitorare stato reale climatizzatore (se hai un condizionatore non-smart)
+
 
 3. **Impostazioni notifiche**:
    - **Dispositivi Alexa**: Seleziona Echo/dispositivi per annunci vocali
@@ -196,7 +177,7 @@ Climate Manager crea automaticamente tutte le entità necessarie per ogni config
 
 #### `select.climate_manager_season_[nome]`
 - **Opzioni**: `auto`, `summer`, `winter`
-- **Automatico**: In modalità auto, rileva stagione da temperature ambiente
+- **Automatico**: In modalità auto, rileva stagione automaticamente
 - **Manuale**: Controllo diretto per esigenze specifiche
 
 #### `select.climate_manager_timer_off_hvac_mode_[nome]`
@@ -208,38 +189,6 @@ Climate Manager crea automaticamente tutte le entità necessarie per ogni config
 - **Funzione**: Modalità ventola per timer di spegnimento
 - **Coordinamento**: Lavora insieme al selettore HVAC mode
 - **Efficienza**: Permette spegnimento parziale mantenendo circolazione
-
-### 🔢 **Controlli Numerici**
-
-#### `number.climate_manager_timeout_[nome]`
-- **Range**: 1-1440 minuti
-- **Funzione**: Timeout prima di disabilitare automazione con finestre aperte
-- **Default**: 15 minuti
-
-#### `number.climate_manager_delay_before_off_[nome]`
-- **Range**: 0-86400 secondi  
-- **Funzione**: Ritardo spegnimento per finestre aperte
-- **Utilizzo**: Evita spegnimenti per aperture rapide
-
-#### `number.climate_manager_delay_before_on_[nome]`
-- **Range**: 0-86400 secondi
-- **Funzione**: Ritardo riaccensione dopo chiusura finestre
-- **Controllo**: Previene accensioni/spegnimenti rapidi
-
-#### `number.climate_manager_timer_on_minutes_[nome]`
-- **Range**: 1-1440 minuti
-- **Funzione**: Durata timer di spegnimento automatico
-- **Default**: 10 minuti
-
-#### `number.climate_manager_timer_off_minutes_[nome]`
-- **Range**: 1-1440 minuti  
-- **Funzione**: Durata timer di accensione automatica
-- **Default**: 60 minuti
-
-#### `number.climate_manager_timer_on_notification_minutes_[nome]`
-- **Range**: 0-1440 minuti (0 = disabilitato)
-- **Funzione**: Soglia per notifiche "clima acceso troppo tempo"
-- **Interattivo**: Genera notifiche con azioni per spegnimento
 
 ---
 
@@ -311,7 +260,7 @@ language: it  # Auto-detect se omesso
 #### ⚙️ **Pannello Impostazioni**
 - **Modalità stagionale**: Cambio auto/estate/inverno
 - **Timer**: Configurazione timer di accensione/spegnimento
-- **Protezioni**: Blocco impostazioni, auto-timer
+- **Protezioni**: Blocco impostazioni se si vuole bloccare il clima alle impostazioni di accensione impostate.
 - **Soglie**: Temperature e timeout
 
 #### 🔔 **Pannello Notifiche**
@@ -346,20 +295,6 @@ switch.climate_manager_timer_on_soggiorno: 'on'
 switch.climate_manager_lock_settings_soggiorno: 'on'
 ```
 
-### **Monitoraggio stato:**
-
-```yaml
-# Stato generale automazione
-sensor.climate_manager_status_soggiorno
-# Valori: enabled, disabled, window_open, timeout
-
-# Configurazioni correnti
-sensor.climate_manager_settings_soggiorno
-# Attributi: tutte le impostazioni correnti
-```
-
----
-
 ## 🐛 Risoluzione Problemi
 
 ### **Problemi Comuni**
@@ -382,7 +317,7 @@ sensor.climate_manager_settings_soggiorno
 ### **Debug Avanzato**
 
 ```yaml
-# Abilita log dettagliati
+# Abilita log dettagliati in configuration.yaml
 logger:
   logs:
     custom_components.climate_manager: debug
@@ -406,14 +341,6 @@ logger:
 2. Descrivi caso d'uso dettagliato
 3. Fornisci esempi
 
-### **Contribuire Codice**
-1. Fork repository
-2. Crea branch feature
-3. Committa modifiche
-4. Apri Pull Request
-
----
-
 ## 📄 Licenza
 
 MIT License - Vedi [LICENSE](LICENSE) per dettagli.
@@ -422,11 +349,5 @@ MIT License - Vedi [LICENSE](LICENSE) per dettagli.
 
 ## 🔗 Link Utili
 
-- 🏠 [Home Assistant](https://www.home-assistant.io/)
-- 📦 [HACS](https://hacs.xyz/)
 - 🎛️ [Alexa Media Player](https://github.com/custom-components/alexa_media_player)
 - 🐛 [Issues GitHub](https://github.com/LoTableT/climate-manager/issues)
-
----
-
-*Sviluppato con ❤️ per la community Home Assistant* 
