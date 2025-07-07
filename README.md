@@ -252,6 +252,8 @@ language: it  # Auto-detect se omesso
 
 ### **Funzionalità Card**
 
+<img src="images/Classic.png" style="width:20%;"> <img src="images/Modern.png" style="width:18%;"> <img src="images/Compact.png" style="width:10%;"> <img src="images/Cyber.png" style="width:15%;">
+
 #### 🎛️ **Controlli Principali**
 - **Toggle ON/OFF**: Controllo diretto climatizzatore
 - **Controllo temperatura**: Slider con limiti dinamici
