@@ -1,6 +1,0 @@
-{
-  "name": "Climate Manager",
-  "content_in_root": false,
-  "homeassistant": "2023.0.0",
-  "render_readme": true
-}
