@@ -243,6 +243,7 @@ Tipo Risorsa: Modulo Javascript (si auto-seleziona una volta inserito l'URL)
 
 <img src="https://github.com/user-attachments/assets/a62c2803-77fd-4ae0-a62d-dbbecccf923f" style="width:30%;">
 
+# Una volta aggiunta la card, RESETTARE LA CACHE DEL BROWSER, se la cache non viene resettata non visualizzerete la card da aggiungerre alla dashboard.
 
 ### **Configurazione Card**
 Configurabile tramite UI oppure:
