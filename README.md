@@ -1,4 +1,6 @@
-# 🏠 Climate Manager - Gestione Intelligente del Clima
+# <img src="images/logo.png" style="width:40%;"> 
+
+# Gestione Intelligente del Clima
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)](https://github.com/LoTableT/climate_manager)
