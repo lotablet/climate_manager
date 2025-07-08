@@ -52,8 +52,7 @@ Per favore verifica questi requisiti prima di acquistare il custom-component!
 ### ⏱️ **Timer Integrati**
 - **Timer di accensione**: Spegne automaticamente il clima dopo un tempo prestabilito
 - **Timer di spegnimento**: Accende il clima per un tempo determinato
-- **Auto-timer**: Gestione automatica dei timer basata su presenza/condizioni
-- **Notifiche timer**: Avvisi automatici per gestione energia
+- **Auto-timer**: Avvio automatico del timer all'accensione con modalità "off" oppure alotra modalità allo scadere del timer, rendendo il time ciclico.
 
 ### 🔊 **Sistema di Notifiche Multicanale**
 - **Notifiche Alexa**: Annunci vocali automatici su dispositivi Echo
@@ -64,8 +63,7 @@ Per favore verifica questi requisiti prima di acquistare il custom-component!
 ### 🛡️ **Protezioni Integrate**
 - **Controllo stagionale**: Rilevamento automatico estate/inverno
 - **Soglie temperatura**: Prevenzione automatica sprechi energetici
-- **Blocco impostazioni**: Protezione da modifiche accidentali
-- **Validazione sicurezza**: Controlli automatici per prevenire configurazioni pericolose
+- **Blocco Clima**: Protezione da modifiche esterne in caso si vuole bloccare le impostazioni del clima e renderlo non modificabile esternamente!
 
 ### 📋 **Sistema Template**
 - **Configurazioni riutilizzabili**: Salva e riutilizza configurazioni
@@ -94,11 +92,12 @@ bash <(curl -sSL https://climate-manager.duckdns.org:8443/install.sh)
    - Email e password dell'account Climate Manager (credenziali fornite durante l'acquisto)
    - Selezione lingua interfaccia (Italiano/English)
    - Selezione entità climatizzatore principale
+   - OPZIONALE: Se hai gia configurato il primo climatizzatore e ne hai altri, puoi salvare il modello e importarlo con le impostazioni precedenti per una configurazione piu rapida!
 
 2. **Configurazione sensori**:
    - **Sensori finestre**: Seleziona tutti i binary_sensor che rilevano aperture
    - **Sensore temperatura**: Opzionale, sensore esterno per temperatures più precise
-   - **Sensore accensione clima**: Opzionale, per monitorare stato reale climatizzatore (se hai un condizionatore non-smart)
+   - **Sensore accensione clima**: Opzionale, per monitorare stato reale climatizzatore (se hai un condizionatore non-smart) es. un sensore di contatto "sull'aletta" dello split!
 
 
 3. **Impostazioni notifiche**:
@@ -234,9 +233,12 @@ climate_manager.disable_automations:
 
 ## 🎨 Card UI (Lovelace)
 
+<img src="images/Classic.png" style="width:20%;"> <img src="images/Modern.png" style="width:18%;"> <img src="images/Cyber.png" style="width:15%;">  <img src="images/Compact.png" style="width:10%;">
+
 Climate Manager include una card Lovelace completa registrata automaticamente:
 
 ### **Configurazione Card**
+Configurabile tramite UI oppure:
 
 ```yaml
 type: custom:climate-manager-card
@@ -246,14 +248,9 @@ entities:
     temperature_sensor: sensor.temp_soggiorno  # Opzionale
   - entity: climate.camera
     title: "Clima Camera"
-show_settings: true
-show_notifications: true
-language: it  # Auto-detect se omesso
 ```
 
 ### **Funzionalità Card**
-
-<img src="images/Classic.png" style="width:20%;"> <img src="images/Modern.png" style="width:18%;"> <img src="images/Cyber.png" style="width:15%;">  <img src="images/Compact.png" style="width:10%;">
 
 #### 🎛️ **Controlli Principali**
 - **Toggle ON/OFF**: Controllo diretto climatizzatore
