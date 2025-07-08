@@ -2,7 +2,6 @@
 
 # Gestione Intelligente del Clima
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)](https://github.com/LoTableT/climate_manager)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
