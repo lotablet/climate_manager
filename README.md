@@ -6,8 +6,6 @@
 
 **Climate Manager** è un'integrazione **completamente gratuita e open source** per Home Assistant che fornisce **gestione completamente automatica** dei sistemi di climatizzazione. Una volta configurata, l'integrazione gestisce autonomamente tutti gli aspetti del controllo clima senza necessità di automazioni aggiuntive.
 
-**🆓 Completamente gratuito** - Nessun account, nessun server, funziona al 100% in locale!
-
 Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [Riccardo Rizzardi](https://www.tiktok.com/@riccardorizzardi) che senza di voi questo custom component non sarebbe stato possibile ❤️
 
 ---
