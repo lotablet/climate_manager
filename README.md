@@ -75,7 +75,7 @@ Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [
    - Apri HACS in Home Assistant
    - Clicca sui tre puntini in alto a destra
    - Clicca su "Archivi digitali personalizzati" 
-   - Aggiungi l'URL: `https://github.com/LoTableT/climate_manager`
+   - Aggiungi l'URL: `https://github.com/lotablet/climate_manager`
    - Categoria: "Integrazione"
    - Clicca "Aggiungi"
 
@@ -93,7 +93,7 @@ Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [
 ### 🔧 **Metodo 2: Installazione Manuale**
 
 1. **Scarica i file**:
-   - Scarica l'ultima release da [GitHub](https://github.com/LoTableT/climate_manager/releases)
+   - Scarica l'ultima release da [GitHub](https://github.com/lotablet/climate_manager/releases)
    - Estrai i file
 
 2. **Copia i file**:
