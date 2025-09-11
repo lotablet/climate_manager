@@ -1,0 +1,220 @@
+{
+  "title": "Climate Manager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "🏠 Configure Climate Manager",
+        "description": "Configure your intelligent climate management system.",
+        "data": {
+          "climate_entity": "🌡️ Climate entity to control",
+          "lingua": "🌐 Interface language",
+          "use_template": "📋 Import from existing template"
+        }
+      },
+      "import_template": {
+        "title": "📋 Import from Template",
+        "description": "Select an existing configuration template to import.",
+        "data": {
+          "template_name": "📋 Select template",
+          "manage_templates": "⚙️ Manage existing templates",
+          "skip_template": "⏭️ Skip and configure manually"
+        }
+      },
+      "customize_template": {
+        "title": "🎯 Customize Configuration",
+        "description": "Configure only the specific fields for this device. Everything else will be taken from the selected template.",
+        "data": {
+          "window_sensors": "🪟 Window/door sensors (detect openings)",
+          "temperature_sensor": "🌡️ Room temperature sensor",
+          "climate_power_sensor": "⚡ Climate power sensor (optional)",
+          "room_name": "🏠 Room name for notifications (optional)",
+          "alexa_media": "🔊 Alexa devices for voice announcements",
+          "push_targets": "📱 Push notification services"
+        }
+      },
+      "manage_templates": {
+        "title": "⚙️ Template Management",
+        "description": "Manage your saved configuration templates.",
+        "data": {
+          "template_name": "📋 Select template",
+          "template_action": "🔧 Action to perform",
+          "new_template_name": "📝 New template name"
+        }
+      },
+      "options": {
+        "title": "🏠 Configure Climate Manager — step 2",
+        "description": "Configure sensors and advanced options with logically organized sections.",
+        "data": {
+          "name": "📝 Room name (modify only if necessary)",
+          "window_sensors": "🪟 Window/door sensors (detect openings)",
+          "use_temp_sensor": "🌡️ Use external temperature sensor",
+          "temperature_sensor": "🌡️ Room temperature sensor",
+          "climate_power_sensor": "⚡ Climate power sensor (optional)",
+          "room_name": "🏠 Room name for notifications (optional)",
+          "alexa_media": "🔊 Alexa devices for voice announcements",
+          "push_targets": "📱 Push notification services",
+          "timeout": "⏱️ Automation timeout (0 = disabled)",
+          "delay_before_off": "⏸️ Delay before turning off for open window(s)",
+          "delay_before_on": "▶️ Delay before turning on for closed window(s)",
+          "timer_on_minutes": "⏰ Climate on timer (minutes)",
+          "timer_off_minutes": "⏰ Climate off timer (minutes)",
+          "timer_on_notification_minutes": "⏰ Climate on too long notification (minutes, 0 = disabled)",
+          "timer_off_hvac_mode_selector": "🔄 HVAC mode for off timer",
+          "timer_off_fan_mode_selector": "💨 Fan mode for off timer",
+          "season": "🌞❄️ Seasonal mode (automatic or manual)",
+          "notification_time_start_alexa": "🌅 Alexa notifications start time",
+          "notification_time_end_alexa": "🌇 Alexa notifications end time",
+          "notification_time_start_push": "🌅 Push notifications start time",
+          "notification_time_end_push": "🌇 Push notifications end time",
+          "hvac_mode_summer": "☀️ Summer climate mode",
+          "hvac_mode_winter": "❄️ Winter climate mode",
+          "fan_mode_summer": "💨 Summer fan speed",
+          "fan_mode_winter": "💨 Winter fan speed",
+          "summer_temp_threshold": "🌡️ Summer mode temperature threshold",
+          "winter_temp_threshold": "🌡️ Winter mode temperature threshold",
+          "temperature_summer": "☀️ Summer target temperature",
+          "temperature_winter": "❄️ Winter target temperature",
+          "enable_msg_window_open_alexa": "🔊 Alexa: climate off for window",
+          "enable_msg_window_open_push": "📱 Push: climate off for window",
+          "msg_window_open": "💬 Message: climate off for open window",
+          "enable_msg_resume_alexa": "🔊 Alexa: climate resumed",
+          "enable_msg_resume_push": "📱 Push: climate resumed",
+          "msg_resume": "💬 Message: climate resumed after closing",
+          "enable_msg_window_open_long_alexa": "🔊 Alexa: window open too long",
+          "enable_msg_window_open_long_push": "📱 Push: window open too long",
+          "msg_window_open_long": "⚠️ Message: window open too long",
+          "enable_msg_window_blocked_alexa": "🔊 Alexa: climate blocked for window",
+          "enable_msg_window_blocked_push": "📱 Push: climate blocked for window",
+          "msg_window_blocked": "🚫 Message: climate blocked for open window",
+          "enable_msg_climate_blocked_temp_alexa": "🔊 Alexa: temperature block",
+          "enable_msg_climate_blocked_temp_push": "📱 Push: temperature block",
+          "msg_climate_blocked_temp": "🚫 Message: block for invalid temperature",
+          "enable_msg_climate_blocked_summer_alexa": "🔊 Alexa: summer block",
+          "enable_msg_climate_blocked_summer_push": "📱 Push: summer block",
+          "msg_climate_blocked_summer": "🚫 Message: summer block (too cold)",
+          "enable_msg_climate_blocked_winter_alexa": "🔊 Alexa: winter block",
+          "enable_msg_climate_blocked_winter_push": "📱 Push: winter block",
+          "msg_climate_blocked_winter": "🚫 Message: winter block (too hot)",
+          "enable_msg_climate_on_ok_alexa": "🔊 Alexa: successful activation",
+          "enable_msg_climate_on_ok_push": "📱 Push: successful activation",
+          "msg_climate_on_ok": "✅ Message: climate turned on successfully",
+          "enable_msg_timer_off_executed_alexa": "🔊 Alexa: off timer executed",
+          "enable_msg_timer_off_executed_push": "📱 Push: off timer executed",
+          "msg_timer_off_executed": "✅ Message: off timer executed",
+          "enable_msg_timer_off_mode_executed_alexa": "🔊 Alexa: off timer with mode change",
+          "enable_msg_timer_off_mode_executed_push": "📱 Push: off timer with mode change",
+          "msg_timer_off_mode_executed": "✅ Message: off timer executed with mode change",
+          "enable_msg_timer_on_notification_alexa": "🔊 Alexa: climate on too long notification",
+          "enable_msg_timer_on_notification_push": "📱 Push: climate on too long notification",
+          "msg_timer_on_notification": "⏰ Message: climate on too long notification (interactive)",
+          "save_as_template": "💾 Save this configuration as template",
+          "template_name_save": "📝 Template name to save"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "⚙️ Advanced Climate Manager Options",
+        "description": "Modify timeout, fan modes and messages anytime with organized sections.",
+        "data": {
+          "climate_entity": "🌡️ Main climate entity",
+          "window_sensors": "🪟 Window/door sensors (detect openings)",
+          "use_temp_sensor": "🌡️ Use external temperature sensor",
+          "temperature_sensor": "🌡️ Room temperature sensor",
+          "climate_power_sensor": "⚡ Climate power sensor (optional)",
+          "room_name": "🏠 Room name for notifications (optional)",
+          "alexa_media": "🔊 Alexa devices for voice announcements",
+          "push_targets": "📱 Push notification services",
+          "timeout": "⏱️ Automation timeout (0 = disabled)",
+          "delay_before_off": "⏸️ Delay before turning off for open window(s)",
+          "delay_before_on": "▶️ Delay before turning on for closed window(s)",
+          "timer_on_minutes": "⏰ Climate on timer (minutes)",
+          "timer_off_minutes": "⏰ Climate off timer (minutes)",
+          "timer_on_notification_minutes": "⏰ Climate on too long notification (minutes, 0 = disabled)",
+          "timer_off_hvac_mode_selector": "🔄 HVAC mode for off timer",
+          "timer_off_fan_mode_selector": "💨 Fan mode for off timer",
+          "season": "🌞❄️ Seasonal mode (automatic or manual)",
+          "notification_time_start_alexa": "🌅 Alexa notifications start time",
+          "notification_time_end_alexa": "🌇 Alexa notifications end time",
+          "notification_time_start_push": "🌅 Push notifications start time",
+          "notification_time_end_push": "🌇 Push notifications end time",
+          "hvac_mode_summer": "☀️ Summer climate mode",
+          "hvac_mode_winter": "❄️ Winter climate mode",
+          "fan_mode_summer": "💨 Summer fan speed",
+          "fan_mode_winter": "💨 Winter fan speed",
+          "summer_temp_threshold": "🌡️ Summer mode temperature threshold",
+          "winter_temp_threshold": "🌡️ Winter mode temperature threshold",
+          "temperature_summer": "☀️ Summer target temperature",
+          "temperature_winter": "❄️ Winter target temperature",
+          "enable_msg_window_open_alexa": "🔊 Alexa: climate off for window",
+          "enable_msg_window_open_push": "📱 Push: climate off for window",
+          "msg_window_open": "💬 Message: climate off for open window",
+          "enable_msg_resume_alexa": "🔊 Alexa: climate resumed",
+          "enable_msg_resume_push": "📱 Push: climate resumed",
+          "msg_resume": "💬 Message: climate resumed after closing",
+          "enable_msg_window_open_long_alexa": "🔊 Alexa: window open too long",
+          "enable_msg_window_open_long_push": "📱 Push: window open too long",
+          "msg_window_open_long": "⚠️ Message: window open too long",
+          "enable_msg_window_blocked_alexa": "🔊 Alexa: climate blocked for window",
+          "enable_msg_window_blocked_push": "📱 Push: climate blocked for window",
+          "msg_window_blocked": "🚫 Message: climate blocked for open window",
+          "enable_msg_climate_blocked_temp_alexa": "🔊 Alexa: temperature block",
+          "enable_msg_climate_blocked_temp_push": "📱 Push: temperature block",
+          "msg_climate_blocked_temp": "🚫 Message: block for invalid temperature",
+          "enable_msg_climate_blocked_summer_alexa": "🔊 Alexa: summer block",
+          "enable_msg_climate_blocked_summer_push": "📱 Push: summer block",
+          "msg_climate_blocked_summer": "🚫 Message: summer block (too cold)",
+          "enable_msg_climate_blocked_winter_alexa": "🔊 Alexa: winter block",
+          "enable_msg_climate_blocked_winter_push": "📱 Push: winter block",
+          "msg_climate_blocked_winter": "🚫 Message: winter block (too hot)",
+          "enable_msg_climate_on_ok_alexa": "🔊 Alexa: successful activation",
+          "enable_msg_climate_on_ok_push": "📱 Push: successful activation",
+          "msg_climate_on_ok": "✅ Message: climate turned on successfully",
+          "enable_msg_timer_off_executed_alexa": "🔊 Alexa: off timer executed",
+          "enable_msg_timer_off_executed_push": "📱 Push: off timer executed",
+          "msg_timer_off_executed": "✅ Message: off timer executed",
+          "enable_msg_timer_off_mode_executed_alexa": "🔊 Alexa: off timer with mode change",
+          "enable_msg_timer_off_mode_executed_push": "📱 Push: off timer with mode change",
+          "msg_timer_off_mode_executed": "✅ Message: off timer executed with mode change",
+          "enable_msg_timer_on_notification_alexa": "🔊 Alexa: climate on too long notification",
+          "enable_msg_timer_on_notification_push": "📱 Push: climate on too long notification",
+          "msg_timer_on_notification": "⏰ Message: climate on too long notification (interactive)",
+          "save_as_template": "💾 Save this configuration as template",
+          "template_name_save": "📝 Template name to save"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "climate_manager_Window open timer": { "name": "Window open timer" },
+      "climate_manager_Window closed timer": { "name": "Window closed timer" },
+      "climate_manager_Window open timeout": { "name": "Window open timeout" },
+      "climate_manager_Automation timeout countdown": { "name": "Automation timeout countdown" },
+      "climate_manager_Summer valid temperature": { "name": "Summer valid temperature" },
+      "climate_manager_Winter valid temperature": { "name": "Winter valid temperature" },
+      "climate_manager_Timer_Accensione_Countdown": { "name": "On Timer Countdown" },
+      "climate_manager_Timer_Spegnimento_Countdown": { "name": "Off Timer Countdown" },
+      "climate_manager_Timer_Accensione_Notifica": { "name": "On Timer Notification" },
+      "climate_manager_Settings": { "name": "Settings" },
+      "climate_manager_Automation_Status": { "name": "Automation Status" },
+      "climate_manager_Previous_Climate_State": { "name": "Previous Climate State" }
+    },
+    "switch": {
+      "climate_manager_Automazione": { "name": "Automation" },
+      "climate_manager_Timer_Accensione": { "name": "On Timer" },
+      "climate_manager_Timer_Spegnimento": { "name": "Off Timer" },
+      "climate_manager_Blocco_Impostazioni": { "name": "Settings Lock" },
+      "climate_manager_Timer_Automatico": { "name": "Automatic Timer" }
+    },
+    "select": {
+      "climate_manager_Timer_Spegnimento_Modalita_HVAC": { "name": "Off Timer HVAC Mode" },
+      "climate_manager_Timer_Spegnimento_Modalita_Ventola": { "name": "Off Timer Fan Mode" }
+    },
+    "number": {
+      "climate_manager_Timer_Accensione_Notifica": { "name": "On Timer Notification" }
+    }
+  }
+}
