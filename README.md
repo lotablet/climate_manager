@@ -4,9 +4,11 @@
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Climate Manager** è un'integrazione completa per Home Assistant che fornisce **gestione completamente automatica** dei sistemi di climatizzazione. Una volta configurata, l'integrazione gestisce autonomamente tutti gli aspetti del controllo clima senza necessità di automazioni aggiuntive.
+**Climate Manager** è un'integrazione **completamente gratuita e open source** per Home Assistant che fornisce **gestione completamente automatica** dei sistemi di climatizzazione. Una volta configurata, l'integrazione gestisce autonomamente tutti gli aspetti del controllo clima senza necessità di automazioni aggiuntive.
 
-Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [Riccardo Rizzaroli](https://www.tiktok.com/@riccardorizzardi) che senza di voi questo custom  component non sarebbe stato possibile ❤️
+**🆓 Completamente gratuito** - Nessun account, nessun server, funziona al 100% in locale!
+
+Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [Riccardo Rizzardi](https://www.tiktok.com/@riccardorizzardi) che senza di voi questo custom component non sarebbe stato possibile ❤️
 
 ---
 
@@ -28,8 +30,6 @@ Uno speciale ringraziamento a [Fratech95](https://www.tiktok.com/@fratech95) e [
   - Potete aggiungere un binary_sensor oppure un sensore che misura la potenza del climatizzatore come "trigger" di accensione.
 * **Sensori finestra** (`binary_sensor` con `device_class: window` o `door`).
 
-Per favore verifica questi requisiti prima di acquistare il custom-component!
-
 ### Facoltativo
 
 * **Alexa Media Player** per annunci vocali.
@@ -40,8 +40,6 @@ Per favore verifica questi requisiti prima di acquistare il custom-component!
 ### 🎯 **Gestione Completamente Automatica**
 - **Automazioni integrate**: Nessuna necessità di creare automazioni YAML
 - **Entità auto-create**: Tutte le entità di controllo vengono create automaticamente
-- **Sistema self-contained**: Funziona indipendentemente senza dipendenze esterne
-
 ### 🎯 **Controllo Intelligente Finestre**
 - **Spegnimento automatico**: Il clima si spegne quando rileva finestre aperte
 - **Ripristino intelligente**: Riaccensione automatica quando le finestre si chiudono
@@ -73,29 +71,55 @@ Per favore verifica questi requisiti prima di acquistare il custom-component!
 
 ## 📦 Installazione
 
+### 🏪 **Metodo 1: HACS (Consigliato)**
 
-1. Scaricare Advanced Terminal & SSH su "Componenti Aggiuntivi"
-2. Incolla questo codice:
-```
-bash <(curl -sSL https://climate-manager.duckdns.org:8443/install.sh)
-```
-3. Esegui l'installazione inserendo nome utente e password forniti durante l'acquisto.
-4. Riavvia Home Assitant
+1. **Aggiungi repository personalizzato**:
+   - Apri HACS in Home Assistant
+   - Clicca sui tre puntini in alto a destra
+   - Clicca su "Archivi digitali personalizzati" 
+   - Aggiungi l'URL: `https://github.com/LoTableT/climate_manager`
+   - Categoria: "Integrazione"
+   - Clicca "Aggiungi"
+
+2. **Installa Climate Manager**:
+   - Cerca "Climate Manager" in HACS
+   - Clicca "Scarica"
+   - Riavvia Home Assistant
+
+3. **Configura l'integrazione**:
+   - Vai in "Impostazioni" → "Dispositivi e Servizi"
+   - Clicca "+ Aggiungi integrazione"
+   - Cerca "Climate Manager"
+   - Segui la configurazione guidata
+
+### 🔧 **Metodo 2: Installazione Manuale**
+
+1. **Scarica i file**:
+   - Scarica l'ultima release da [GitHub](https://github.com/LoTableT/climate_manager/releases)
+   - Estrai i file
+
+2. **Copia i file**:
+   ```
+   /config/custom_components/climate_manager/
+   ```
+
+3. **Riavvia e configura**:
+   - Riavvia Home Assistant
+   - Aggiungi l'integrazione come sopra
 
 
 ## ⚙️ Configurazione
 
 ### 🔑 Setup Iniziale (Tutto tramite UI)
 
-1. **Credenziali di accesso**:
-   - Email e password dell'account Climate Manager (credenziali fornite durante l'acquisto)
-   - Selezione lingua interfaccia (Italiano/English)
+1. **Configurazione base**:
    - Selezione entità climatizzatore principale
-   - OPZIONALE: Se hai gia configurato il primo climatizzatore e ne hai altri, puoi salvare il modello e importarlo con le impostazioni precedenti per una configurazione piu rapida!
+   - Selezione lingua interfaccia (Italiano/English)
+   - **OPZIONALE**: Se hai già configurato il primo climatizzatore e ne hai altri, puoi salvare il modello e importarlo con le impostazioni precedenti per una configurazione più rapida!
 
 2. **Configurazione sensori**:
    - **Sensori finestre**: Seleziona tutti i binary_sensor che rilevano aperture
-   - **Sensore temperatura**: Opzionale, sensore esterno per temperatures più precise
+   - **Sensore temperatura**: Opzionale, sensore esterno per temperature più precise
    - **Sensore accensione clima**: Opzionale, per monitorare stato reale climatizzatore (se hai un condizionatore non-smart) es. un sensore di contatto "sull'aletta" dello split!
 
 
@@ -354,6 +378,15 @@ logger:
 ---
 
 ## 🔗 Link Utili
-- ✉️ Email: [lore.tavola@gmail.com](mailto:lore.tavola@gmail.com)
-- 🎛️ [Alexa Media Player](https://github.com/custom-components/alexa_media_player)
-- 🐛 [Issues GitHub](https://github.com/LoTableT/climate_manager/issues)
+- 🐙 **GitHub**: [https://github.com/LoTableT/climate_manager](https://github.com/LoTableT/climate_manager)
+- 📥 **Releases**: [https://github.com/LoTableT/climate_manager/releases](https://github.com/LoTableT/climate_manager/releases)
+- 🐛 **Segnala Bug**: [https://github.com/LoTableT/climate_manager/issues](https://github.com/LoTableT/climate_manager/issues)
+- ✉️ **Email**: [lore.tavola@gmail.com](mailto:lore.tavola@gmail.com)
+- 🎛️ **Alexa Media Player**: [https://github.com/custom-components/alexa_media_player](https://github.com/custom-components/alexa_media_player)
+
+### 🏪 **HACS**
+- Una volta installato tramite HACS, riceverai automaticamente gli aggiornamenti futuri
+
+## 📝 **Licenza**
+
+Questo progetto è rilasciato sotto licenza MIT. Vedi il file [LICENSE](LICENSE) per i dettagli.
