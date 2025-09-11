@@ -1,0 +1,264 @@
+set_season:
+  name: "Set Season"
+  description: "Set the seasonal mode for climate manager"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    season:
+      name: "Season"
+      description: "The season mode to set"
+      required: true
+      selector:
+        select:
+          options:
+            - "auto"
+            - "summer" 
+            - "winter"
+
+set_room_name:
+  name: "Set Room Name"
+  description: "Set the room name for notifications"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    room_name:
+      name: "Room Name"
+      description: "The room name to use in notifications"
+      required: true
+      selector:
+        text:
+
+set_timer:
+  name: "Set Timer"
+  description: "Set timeout and delay values"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    timeout:
+      name: "Timeout"
+      description: "Automation timeout in minutes"
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 300
+          unit_of_measurement: "min"
+    delay_before_off:
+      name: "Delay Before Off"
+      description: "Delay before turning off when window opens (seconds)"
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 600
+          unit_of_measurement: "s"
+    delay_before_on:
+      name: "Delay Before On"
+      description: "Delay before turning on when window closes (seconds)"
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 600
+          unit_of_measurement: "s"
+
+set_notification_switch:
+  name: "Set Notification Switch"
+  description: "Enable or disable specific notification types"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    msg_type:
+      name: "Message Type"
+      description: "The type of message to configure"
+      required: true
+      selector:
+        text:
+    channel:
+      name: "Channel"
+      description: "The notification channel (alexa or push)"
+      required: true
+      selector:
+        select:
+          options:
+            - "alexa"
+            - "push"
+    value:
+      name: "Enable"
+      description: "Enable or disable this notification"
+      required: true
+      selector:
+        boolean:
+
+set_option:
+  name: "Set Option"
+  description: "Set any configuration option"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    key:
+      name: "Option Key"
+      description: "The configuration key to set"
+      required: true
+      selector:
+        text:
+    value:
+      name: "Value"
+      description: "The value to set"
+      required: true
+
+enable_automations:
+  name: "Enable Automations"
+  description: "Enable Climate Manager automations"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+
+disable_automations:
+  name: "Disable Automations"
+  description: "Disable Climate Manager automations"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+
+set_timer_off_mode:
+  name: "Set Timer Off Mode"
+  description: "Set the HVAC mode to apply when the off timer expires"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    mode:
+      name: "Timer Off Mode"
+      description: "HVAC mode to set when off timer expires (off, heat, cool, heat_cool, auto, dry, fan_only)"
+      required: true
+      selector:
+        select:
+          options:
+            - "off"
+            - "heat"
+            - "cool" 
+            - "heat_cool"
+            - "auto"
+            - "dry"
+            - "fan_only"
+
+set_timer_off_fan_mode:
+  name: "Set Timer Off Fan Mode"
+  description: "Set the fan mode to apply when the off timer expires"
+  fields:
+    entity_id:
+      name: "Climate Entity"
+      description: "The climate entity to configure"
+      required: false
+      selector:
+        entity:
+          domain: climate
+    entry_id:
+      name: "Entry ID"
+      description: "The config entry ID (alternative to entity_id)"
+      required: false
+      selector:
+        text:
+    fan_mode:
+      name: "Timer Off Fan Mode"
+      description: "Fan mode to set when off timer expires (auto uses season setting)"
+      required: true
+      selector:
+        select:
+          options:
+            - "auto"
+            - "low"
+            - "medium"
+            - "high"
+            - "middle_low"
+            - "middle_high"
+            - "silent"
+            - "turbo" 
