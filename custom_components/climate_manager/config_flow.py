@@ -368,7 +368,7 @@ class ClimateManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
       vol.Optional(CONF_TEMP_SENSOR, description={"translation_key": "temperature_sensor"}, default=""): SelectSelector(SelectSelectorConfig(options=temp_sensor_options, mode="dropdown")),
       vol.Optional(CONF_CLIMATE_POWER_SENSOR, description={"translation_key": "climate_power_sensor"}, default=""): SelectSelector(SelectSelectorConfig(options=climate_power_sensor_options, mode="dropdown")),
       vol.Optional(CONF_ROOM_NAME, description={"translation_key": "room_name"}): TextSelector(TextSelectorConfig()),
-      vol.Required(CONF_ALEXA, description={"translation_key": "alexa_media"}): EntitySelector(EntitySelectorConfig(domain=["media_player"], multiple=True)),
+      vol.Required(CONF_ALEXA, description={"translation_key": "alexa_media"}): EntitySelector(EntitySelectorConfig(domain=["media_player", "notify"], multiple=True)),
       vol.Optional(CONF_PUSH, description={"translation_key": "push_targets"}): SelectSelector(SelectSelectorConfig(options=notify_services, multiple=True, mode="dropdown")),
     })
     
@@ -512,7 +512,7 @@ class ClimateManagerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
       vol.Optional(CONF_ROOM_NAME, description={"translation_key": "room_name"}): TextSelector(TextSelectorConfig()),
 
       # === NOTIFICHE ===
-      vol.Required(CONF_ALEXA, description={"translation_key": "alexa_media"}): EntitySelector(EntitySelectorConfig(domain=["media_player"], multiple=True)),
+      vol.Required(CONF_ALEXA, description={"translation_key": "alexa_media"}): EntitySelector(EntitySelectorConfig(domain=["media_player", "notify"], multiple=True)),
       vol.Optional(CONF_PUSH, description={"translation_key": "push_targets"}): SelectSelector(SelectSelectorConfig(options=notify_services, multiple=True, mode="dropdown")),
 
       # === TEMPORIZZAZIONI ===
@@ -707,7 +707,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
       (vol.Optional(CONF_ROOM_NAME, description={"translation_key": "room_name"}, default=options.get(CONF_ROOM_NAME, "")), TextSelector(TextSelectorConfig())),
 
       # === NOTIFICHE ===
-      (vol.Required(CONF_ALEXA, description={"translation_key": "alexa_media"}, default=options.get(CONF_ALEXA, [])), EntitySelector(EntitySelectorConfig(domain=["media_player"], multiple=True))),
+      (vol.Required(CONF_ALEXA, description={"translation_key": "alexa_media"}, default=options.get(CONF_ALEXA, [])), EntitySelector(EntitySelectorConfig(domain=["media_player", "notify"], multiple=True))),
       (vol.Optional(CONF_PUSH, description={"translation_key": "push_targets"}, default=push_targets_default), SelectSelector(SelectSelectorConfig(options=notify_services, multiple=True, mode="dropdown"))),
 
       # === TEMPORIZZAZIONI ===

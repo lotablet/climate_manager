@@ -1316,7 +1316,29 @@ class ClimateManagerSettingsSensor(Entity):
         if current_temp is not None:
             attrs["current_temperature"] = current_temp
             
-        add_if_exists("alexa_media", conf.get("alexa_media"))
+        # --- Sistema di notifica Alexa ---
+        alexa_config = conf.get("alexa_media")
+        if alexa_config:
+            # Verifica quale sistema di notifica Alexa è attualmente attivo
+            active_alexa_entities = []
+            for device in alexa_config:
+                if device.startswith('media_player.'):
+                    device_name = device.replace('media_player.', '')
+                    # Controlla se esistono entità notify con i nuovi suffissi
+                    notify_speak = f"notify.{device_name}_speak"
+                    notify_announce = f"notify.{device_name}_announce"
+                    
+                    if self.hass.states.get(notify_speak):
+                        active_alexa_entities.append(notify_speak)
+                    elif self.hass.states.get(notify_announce):
+                        active_alexa_entities.append(notify_announce)
+                    else:
+                        # Sistema legacy
+                        active_alexa_entities.append(f"alexa_media_{device_name}")
+            
+            if active_alexa_entities:
+                attrs["alexa_media"] = active_alexa_entities
+        
         add_if_exists("push_targets", opts.get("push_targets") or conf.get("push_targets"))
         
         # --- Modalità e impostazioni clima ---

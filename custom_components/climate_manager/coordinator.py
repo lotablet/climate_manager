@@ -2055,12 +2055,27 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                 for target in self._alexa_targets:
                     data = {"message": message}
                     try:
-                        await self.hass.services.async_call(
-                            "notify", target,
-                            data,
-                            blocking=False
-                        )
-                        _LOGGER.debug(f"[{self.current_name}] Notifica Alexa inviata a: notify.{target}")
+                        # Controllo per nuovo sistema notify Alexa
+                        notify_entity = await self._get_alexa_notify_entity(target)
+                        if notify_entity:
+                            # Usa il nuovo sistema notify.send_message
+                            await self.hass.services.async_call(
+                                "notify", "send_message",
+                                {
+                                    "message": message,
+                                    "entity_id": notify_entity
+                                },
+                                blocking=False
+                            )
+                            _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (nuovo sistema) inviata a: {notify_entity}")
+                        else:
+                            # Usa il vecchio sistema alexa_media
+                            await self.hass.services.async_call(
+                                "notify", target,
+                                data,
+                                blocking=False
+                            )
+                            _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (vecchio sistema) inviata a: notify.{target}")
                     except Exception as e:
                         _LOGGER.error(f"[{self.current_name}] Errore notifica Alexa notify.{target}: {e}")
         
@@ -2083,6 +2098,37 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                         _LOGGER.debug(f"[{self.current_name}] Notifica Push inviata a: notify.{service_name}")
                     except Exception as e:
                         _LOGGER.error(f"[{self.current_name}] Errore notifica Push notify.{service_name}: {e}")
+
+    async def _get_alexa_notify_entity(self, alexa_target):
+        """
+        Rileva se esiste un'entità notify per il nuovo sistema Alexa.
+        Controlla per entità con suffisso _speak e _announce.
+        
+        Args:
+            alexa_target: Target nel formato alexa_media_{device}
+            
+        Returns:
+            str: Entity ID dell'entità notify se trovata, None altrimenti
+        """
+        # Estrai il nome del dispositivo dal target alexa_media
+        if not alexa_target.startswith("alexa_media_"):
+            return None
+            
+        device_name = alexa_target.replace("alexa_media_", "")
+        
+        # Controlla se esistono entità notify con i nuovi suffissi
+        possible_entities = [
+            f"notify.{device_name}_speak",
+            f"notify.{device_name}_announce"
+        ]
+        
+        for entity_id in possible_entities:
+            if self.hass.states.get(entity_id) is not None:
+                _LOGGER.debug(f"[{self.current_name}] Trovata entità notify Alexa: {entity_id}")
+                return entity_id
+                
+        _LOGGER.debug(f"[{self.current_name}] Nessuna entità notify trovata per {device_name}, uso sistema legacy")
+        return None
 
     async def _notify_push_only(self, message: str, key: str = None):
         """Invia notifiche solo tramite push (non Alexa) - per conferme azioni interattive"""
