@@ -59,9 +59,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entity_id:
       # entity_id -> entry_id
       for eid, data in hass.data[DOMAIN].items():
-        coord = data["coordinator"]
-        if coord.climate_entity == entity_id:
-          return eid
+        # Salta le chiavi che non sono entry_id (es. _mobile_actions_processed)
+        if isinstance(data, dict) and "coordinator" in data:
+          coord = data["coordinator"]
+          if coord.climate_entity == entity_id:
+            return eid
     raise ValueError("entry_id o entity_id richiesto")
 
   async def _update_options(entry_id, updates):
