@@ -258,7 +258,7 @@ climate_manager.disable_automations:
 
 Per visualizzare la card basta andare in "Impostazioni" - "Plance" - clicca su "Aggiungi" e cerca la card nel menu "Climate Manager Card"
 
-# NOTA: POTREBBE ESSERE NECESSARIO RESETTARE LA CACHE DEL BROWSER PER VISUALIZZARE LA CARD NEL MENU
+## ATTENZIONE: POTREBBE ESSERE NECESSARIO RESETTARE LA CACHE DEL BROWSER PER VISUALIZZARE LA CARD NEL MENU
 
 ### **Configurazione Card**
 Configurabile tramite UI oppure:
