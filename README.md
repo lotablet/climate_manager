@@ -257,6 +257,8 @@ climate_manager.disable_automations:
 <img src="images/Classic.png" style="width:20%;"> <img src="images/Modern.png" style="width:18%;"> <img src="images/Cyber.png" style="width:15%;">  <img src="images/Compact.png" style="width:10%;">
 
 Per visualizzare la card basta andare in "Impostazioni" - "Plance" - clicca su "Aggiungi" e cerca la card nel menu "Climate Manager Card"
+
+
 <img src="https://github.com/user-attachments/assets/a62c2803-77fd-4ae0-a62d-dbbecccf923f" style="width:30%;">
 
 # Una volta aggiunta la card, RESETTARE LA CACHE DEL BROWSER, se la cache non viene resettata non visualizzerete la card da aggiungerre alla dashboard.
