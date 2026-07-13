@@ -447,6 +447,9 @@ class ClimateManagerLockSettingsSwitch(SwitchEntity, RestoreEntity):
         
         # Forza immediatamente le impostazioni configurate
         await self._coordinator._enforce_locked_settings()
+        # Avvia il controllo periodico (safety net ogni 2 minuti)
+        self._coordinator._start_lock_periodic_check()
+        await self._coordinator._enforce_locked_settings()
 
     async def async_turn_off(self, **kwargs):
         self._is_on = False
@@ -454,6 +457,9 @@ class ClimateManagerLockSettingsSwitch(SwitchEntity, RestoreEntity):
         
         # Notifica al coordinator che le impostazioni sono sbloccate
         self._coordinator._settings_locked = False
+        
+        # Ferma il controllo periodico
+        self._coordinator._stop_lock_periodic_check()
         
         # Reset impostazioni override quando blocco si disattiva
         self._coordinator.clear_locked_settings_override()

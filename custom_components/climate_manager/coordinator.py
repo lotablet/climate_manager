@@ -73,6 +73,8 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         self._locked_settings_override = None  # Impostazioni temporanee del timer da proteggere
         self._settings_restore_in_progress = False  # Flag per evitare sovrapposizioni del blocco
         self._last_restore_time = 0  # Timestamp dell'ultimo ripristino per debounce
+        self._lock_restore_until = 0.0  # Timestamp: ignora state changes durante ripristino blocco
+        self._lock_periodic_cancel = None  # Cancella il controllo periodico del blocco
         self._shutdown_in_progress = False  # Flag per prevenire ripristini durante spegnimento
         self.update_window_entities()  # <-- Aggiorna e logga subito la lista finestre
         # Aggiorna subito la stagione effettiva
@@ -298,6 +300,12 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         # Intervieni se si passa da 'off' a una modalità attiva VALIDA
         # e non c'è un binary sensor configurato (per evitare doppie notifiche)
         if old_state == "off" and new_state != "off" and not self.climate_power_sensor:
+            # Se il blocco impostazioni è attivo e ha appena inviato service call,
+            # ignora il cambio di stato: potrebbe essere un breve off/on dell'integrazione
+            # causato dal set_hvac_mode, non un'accensione manuale dell'utente.
+            if self._settings_locked and asyncio.get_event_loop().time() < self._lock_restore_until:
+                _LOGGER.debug(f"[{self.current_name}] 🔒 Cambio stato ignorato durante ripristino blocco impostazioni")
+                return
             _LOGGER.info(f"[{self.current_name}] 🔥 CLIMA ACCESO (da climate entity): {old_state} → {new_state}")
             self._shutdown_already_processed = False  # Reset flag per nuovo ciclo
             self._shutdown_in_progress = False  # Reset flag spegnimento
@@ -2979,6 +2987,11 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             # la temperatura al cambio modalità, o il telecomando cambi più parametri insieme.
             _LOGGER.info(f"[{self.current_name}] 🔒 Ripristino completo impostazioni bloccate → HVAC={target_hvac_mode}, Temp={target_temperature}°C, Fan={target_fan_mode}")
 
+            # Marca l'inizio del ripristino: i successivi state change dell'integrazione
+            # (es. breve 'off' durante cambio modalità) devono essere ignorati da _handle_climate_state.
+            # 5 secondi coprono i service call blocking=False + propagazione stato.
+            self._lock_restore_until = asyncio.get_event_loop().time() + 5.0
+
             # 1. Modalità HVAC
             await self.hass.services.async_call(
                 'climate', 'set_hvac_mode',
@@ -2988,12 +3001,12 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             # Pausa: alcune integrazioni resettano la temperatura al cambio modalità
             await asyncio.sleep(0.5)
 
-            # 2. Temperatura (sempre, anche se apparentemente corretta,
-            #    per annullare il reset silenzioso dell'integrazione)
+            # 2. Temperatura con blocking=True: assicura che arrivi al device
+            #    DOPO che il comando hvac_mode è stato processato dall'integrazione.
             await self.hass.services.async_call(
                 'climate', 'set_temperature',
                 {'entity_id': self.climate_entity, 'temperature': target_temperature},
-                blocking=False
+                blocking=True
             )
             await asyncio.sleep(0.3)
 
@@ -3021,6 +3034,39 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         finally:
             # Resetta SEMPRE il flag alla fine, indipendentemente da come usciamo
             self._settings_restore_in_progress = False
+            # Pianifica il prossimo controllo periodico (safety net)
+            self._schedule_next_lock_check()
+    
+    def _start_lock_periodic_check(self):
+        """Avvia il controllo periodico delle impostazioni bloccate (safety net ogni 2 minuti)."""
+        self._stop_lock_periodic_check()
+        self._schedule_next_lock_check()
+
+    def _stop_lock_periodic_check(self):
+        """Ferma il controllo periodico."""
+        if self._lock_periodic_cancel:
+            self._lock_periodic_cancel()
+            self._lock_periodic_cancel = None
+
+    def _schedule_next_lock_check(self):
+        """Pianifica il prossimo controllo periodico (solo se lock attivo e clima acceso)."""
+        if not self._settings_locked:
+            return
+        interval_s = 120  # 2 minuti
+
+        @callback
+        def _do_periodic_check(_now=None):
+            if not self._settings_locked:
+                self._lock_periodic_cancel = None
+                return
+            climate_state = self.hass.states.get(self.climate_entity)
+            if climate_state and climate_state.state not in ("off", "unknown", "unavailable"):
+                _LOGGER.debug(f"[{self.current_name}] 🔒 Controllo periodico blocco impostazioni")
+                self.hass.async_create_task(self._check_and_restore_locked_settings())
+            # Ri-pianifica il prossimo controllo
+            self._schedule_next_lock_check()
+
+        self._lock_periodic_cancel = async_call_later(self.hass, interval_s, _do_periodic_check)
     
     async def _check_and_restore_locked_settings_debounced(self, *_):
         """Alias mantenuto per compatibilità - chiama direttamente la funzione principale."""
