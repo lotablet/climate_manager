@@ -38,7 +38,7 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         self.season_entity = config.get("season_entity")
         self.alexa_media = config.get("alexa_media", [])
         # push_targets ora viene letto dinamicamente nella property
-        self._alexa_targets = [f"alexa_media_{entity.split('.')[-1]}" for entity in self.alexa_media]
+        self._alexa_targets = self._build_alexa_targets(self.alexa_media)
         # Customization
         self.targets = config.get("targets", {})
         self.notify_enabled = config.get("notify", True)
@@ -178,44 +178,18 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                 any_open = any(window_states)
                 self._window_open = any_open
                 self._notify_window_state_callbacks()
-        # Aggiorna subito e ogni volta che cambia una finestra
+        # Aggiorna subito lo stato iniziale delle finestre
+        # (update_window_entities() ha già registrato tutti i listener per finestre,
+        # climate entity, sensore temperatura e sensore potenza)
         update_group_state()
-        for ent in entities:
-            self._remove_listeners.append(
-                async_track_state_change_event(hass, [ent], self._handle_window_state)
-            )
-        self._remove_listeners.append(
-            async_track_state_change_event(
-                self.hass, [self.climate_entity], self._handle_climate_state
-            )
-        )
         
-        # LISTENER AGGRESSIVO per blocco impostazioni - monitora QUALSIASI cambiamento
+        # LISTENER AGGRESSIVO per blocco impostazioni - monitora QUALSIASI cambiamento attributo
+        # (unico qui, NON in update_window_entities - evita duplicazione)
         self._remove_listeners.append(
             async_track_state_change_event(
                 self.hass, [self.climate_entity], self._handle_climate_attributes_change
             )
         )
-        
-        # Aggiungi listener per il sensore di temperatura o per il climate entity
-        if self.temperature_sensor:
-            # Se c'è un sensore esterno, usa quello
-            self._remove_listeners.append(
-                async_track_state_change_event(
-                    self.hass, [self.temperature_sensor], self._handle_temperature_state
-                )
-            )
-        else:
-            # Se non c'è sensore esterno, ascolta il climate entity per temperature changes
-            # Il listener per climate_entity è già aggiunto sopra, ma aggiungiamo un flag per sapere che dobbiamo monitorare anche la temperatura
-            pass
-        # Aggiungi listener per il binary sensor di accensione clima (opzionale)
-        if self.climate_power_sensor:
-            self._remove_listeners.append(
-                async_track_state_change_event(
-                    self.hass, [self.climate_power_sensor], self._handle_climate_power_state
-                )
-            )
         await self._update_season()  # Imposta stagione all'avvio
         async_call_later(self.hass, 1, self._schedule_season_update)
         # RIPRISTINO TIMER DOPO RIAVVIO: controlla se il clima è acceso e riavvia auto timer se necessario
@@ -227,7 +201,6 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                 "mobile_app_notification_action", self._handle_notification_action
             )
         )
-    @callback
     async def _handle_window_state(self, event):
         # Controllo direttamente tutte le finestre, usando l'ultimo stato valido per quelle offline
         window_states = []
@@ -269,7 +242,6 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         
         self._window_open = any_open
         self._notify_window_state_callbacks()
-    @callback
     async def _handle_climate_state(self, event):
         # Se sincronizzazione in corso, non gestire eventi
         if self._syncing_from_binary_sensor:
@@ -394,12 +366,16 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
 
         # CONTROLLO BLOCCO IMPOSTAZIONI: se le impostazioni sono bloccate, ripristina la configurazione
         # MA SOLO se NON è il timer che sta applicando le sue impostazioni (il timer ha priorità)
-        if self._settings_locked and new_state != "off" and not self._timer_in_action:
+        # e NON è già in corso un ripristino
+        if (self._settings_locked and new_state != "off" and not self._timer_in_action
+                and not self._settings_restore_in_progress):
             # Usa un delay per evitare conflitti con l'evento in corso
+            @callback
+            def _schedule_restore_from_climate_state(_now=None):
+                self.hass.async_create_task(self._check_and_restore_locked_settings())
             from homeassistant.helpers.event import async_call_later
-            async_call_later(self.hass, 2, self._check_and_restore_locked_settings)
+            async_call_later(self.hass, 2, _schedule_restore_from_climate_state)
 
-    @callback
     async def _handle_climate_attributes_change(self, event):
         """BLOCCO AGGRESSIVO: Gestisce qualsiasi cambiamento degli attributi del clima per ripristinare impostazioni bloccate"""
         if not self._settings_locked:
@@ -447,9 +423,12 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             self._settings_restore_in_progress = True
             self._last_restore_time = current_time
             
-            # Ripristina con un piccolo delay per evitare conflitti
+            # Ripristina con un piccolo delay - usa @callback wrapper (richiesto da async_call_later in HA recente)
             from homeassistant.helpers.event import async_call_later
-            async_call_later(self.hass, 1, self._check_and_restore_locked_settings_debounced)
+            @callback
+            def _schedule_locked_restore(_now=None):
+                self.hass.async_create_task(self._check_and_restore_locked_settings())
+            async_call_later(self.hass, 1, _schedule_locked_restore)
 
     def _get_current_temperature(self):
         """Ottiene la temperatura corrente dal sensore esterno o dall'entità climate"""
@@ -493,7 +472,6 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         
         return None
 
-    @callback
     async def _handle_temperature_state(self, event):
         """Gestisce i cambiamenti di temperatura e controlla le soglie"""
         # Se automazione disabilitata, non gestire eventi
@@ -567,7 +545,6 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             if self.is_msg_enabled(msg_key, "alexa") or self.is_msg_enabled(msg_key, "push"):
                 await self._notify(msg, msg_key)
 
-    @callback
     async def _handle_climate_power_state(self, event):
         """Gestisce i cambiamenti del binary sensor di accensione clima (per condizionatori non smart)"""
         # IMPORTANTE: Non controllare automation_enabled qui per permettere la riattivazione automatica
@@ -638,7 +615,6 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                 "climate", "turn_off", {"entity_id": self.climate_entity}, blocking=True
             )
 
-    @callback
     async def _handle_notification_action(self, event):
         """Gestisce le azioni interattive delle notifiche push"""
         import logging
@@ -896,6 +872,9 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         timeout_status = f"{self.window_open_timeout}s" if self.window_open_timeout > 0 else "DISABILITATO"
         _LOGGER.info(f"[{self.current_name}] 🪟 Delay spegnimento: {self.delay_before_off}s, Timeout finestre: {timeout_status}")
         
+        # RESET: ogni nuova apertura finestra azzera il flag timeout del ciclo precedente
+        self._window_timeout_expired = False
+        
         if not self.automation_enabled:
             _LOGGER.info(f"[{self.current_name}] 🪟 Automazioni disabilitate - Nessuna azione")
             return
@@ -926,12 +905,6 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             _LOGGER.info(f"[{self.current_name}] 💾 Salvato stato precedente: {prev_state}")
             self._climate_prev_state = prev_state
             self._notify_prev_state_callbacks()
-            
-        # TIMER GLOBALE: timeout massimo finestra aperta
-        if self._window_timer:
-            self._window_timer()
-            self._window_timer = None
-            self._notify_timer_callbacks()
         
         # TIMER SPEGNIMENTO: delay_before_off
         sensor_val = self._get_current_temperature()
@@ -1043,16 +1016,17 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             _LOGGER.info(f"[{self.current_name}] ⚡ Spegnimento immediato (nessun delay)")
             await do_turn_off(None)
         
-        # TIMER GLOBALE: avvia solo DOPO aver iniziato processo spegnimento E solo se timeout > 0
-        if self.window_open_timeout > 0:
+        # TIMER GLOBALE: avvia solo se non già in esecuzione (NON resettare per glitch sensore o doppi eventi)
+        if self.window_open_timeout > 0 and not self._window_timer:
             _LOGGER.info(f"[{self.current_name}] ⏰ Avviato timer globale finestre: {self.window_open_timeout}s")
             self._window_timer = async_call_later(
                 self.hass, self.window_open_timeout, self._on_window_timeout
             )
             self._notify_timer_callbacks()
+        elif self._window_timer:
+            _LOGGER.info(f"[{self.current_name}] ⏸️ Timer globale finestre già attivo - NON resettato")
         else:
             _LOGGER.info(f"[{self.current_name}] ⏸️ Timer globale finestre disabilitato (timeout=0)")
-            self._window_timer = None
 
     def _translate_mode(self, mode):
         # Traduzioni modalità HVAC
@@ -1349,6 +1323,11 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         self._window_timer = None
         self._window_timeout_expired = True
         self._notify_timer_callbacks()
+        
+        # Disabilita l'automazione: evita accensioni indesiderate dopo chiusura finestre.
+        # Verrà riabilitata automaticamente alla prossima accensione manuale del condizionatore.
+        _LOGGER.info(f"[{self.current_name}] 🚫 Timeout finestre scaduto - automazione disabilitata (ripartirà all'accensione manuale)")
+        await self.disable_automations_by_shutdown()
 
     async def _on_climate_turned_on(self):
         climate_state = self.hass.states.get(self.climate_entity)
@@ -2143,6 +2122,8 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         if not self.automation_enabled:
             _LOGGER.info(f"[{self.current_name}] ✅ RIABILITATE AUTOMAZIONI")
             self.automation_enabled = True
+            # Reset flag timeout finestre: il nuovo ciclo parte da zero
+            self._window_timeout_expired = False
             
             if manual_reactivation:
                 _LOGGER.info(f"[{self.current_name}] ✅ Riattivazione manuale")
@@ -2183,29 +2164,40 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                 for target in self._alexa_targets:
                     data = {"message": message}
                     try:
-                        # Controllo per nuovo sistema notify Alexa
-                        notify_entity = await self._get_alexa_notify_entity(target)
-                        if notify_entity:
-                            # Usa il nuovo sistema notify.send_message
+                        if target.startswith("notify."):
+                            # Entità notify diretta (es. notify.sala_speak)
                             await self.hass.services.async_call(
                                 "notify", "send_message",
                                 {
                                     "message": message,
-                                    "entity_id": notify_entity
+                                    "entity_id": target
                                 },
                                 blocking=False
                             )
-                            _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (nuovo sistema) inviata a: {notify_entity}")
+                            _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (notify diretto) inviata a: {target}")
                         else:
-                            # Usa il vecchio sistema alexa_media
-                            await self.hass.services.async_call(
-                                "notify", target,
-                                data,
-                                blocking=False
-                            )
-                            _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (vecchio sistema) inviata a: notify.{target}")
+                            # Target derivato da media_player: cerca prima il nuovo sistema notify
+                            notify_entity = await self._get_alexa_notify_entity(target)
+                            if notify_entity:
+                                await self.hass.services.async_call(
+                                    "notify", "send_message",
+                                    {
+                                        "message": message,
+                                        "entity_id": notify_entity
+                                    },
+                                    blocking=False
+                                )
+                                _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (nuovo sistema) inviata a: {notify_entity}")
+                            else:
+                                # Vecchio sistema alexa_media
+                                await self.hass.services.async_call(
+                                    "notify", target,
+                                    data,
+                                    blocking=False
+                                )
+                                _LOGGER.debug(f"[{self.current_name}] Notifica Alexa (vecchio sistema) inviata a: notify.{target}")
                     except Exception as e:
-                        _LOGGER.error(f"[{self.current_name}] Errore notifica Alexa notify.{target}: {e}")
+                        _LOGGER.error(f"[{self.current_name}] Errore notifica Alexa {target}: {e}")
         
         # Notifica Push - solo se configurata e abilitata per questo messaggio  
         if key and self.is_msg_enabled(key, "push") and self.push_targets:
@@ -2226,6 +2218,18 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                         _LOGGER.debug(f"[{self.current_name}] Notifica Push inviata a: notify.{service_name}")
                     except Exception as e:
                         _LOGGER.error(f"[{self.current_name}] Errore notifica Push notify.{service_name}: {e}")
+
+    def _build_alexa_targets(self, alexa_entities: list) -> list:
+        """Costruisce la lista target Alexa gestendo sia media_player.* che notify.* entities."""
+        targets = []
+        for entity in (alexa_entities or []):
+            if entity.startswith("notify."):
+                # Entità notify diretta (nuovo sistema Alexa) - usata così com'è
+                targets.append(entity)
+            else:
+                # Entità media_player - deriva il target alexa_media_*
+                targets.append(f"alexa_media_{entity.split('.')[-1]}")
+        return targets
 
     async def _get_alexa_notify_entity(self, alexa_target):
         """
@@ -2659,6 +2663,7 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         self.climate_entity = new_climate
         self.climate_power_sensor = new_power_sensor
         self.alexa_media = new_alexa
+        self._alexa_targets = self._build_alexa_targets(self.alexa_media)
         
         # Se il nome è cambiato, aggiorna anche il config (non solo le options)
         if name_changed and new_name:
@@ -2905,37 +2910,30 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             pass
 
     async def _check_and_restore_locked_settings(self, *_):
-        """Ripristina le impostazioni bloccate quando cambiano - SOLO se il clima è già acceso"""
-        if not self._settings_locked:
-            return
-        
-        # PROTEZIONE SPEGNIMENTO: Non interferire se è in corso uno spegnimento
-        if self._shutdown_in_progress:
-            _LOGGER.info(f"[{self.current_name}] ⏹️ Spegnimento in corso - blocco impostazioni disabilitato")
-            return
-        
-        # CONTROLLO CRITICO: Non accendere il clima se è spento, solo mantenere le impostazioni quando è acceso
-        climate_state = self.hass.states.get(self.climate_entity)
-        if not climate_state or climate_state.state == "off":
-            _LOGGER.info(f"[{self.current_name}] ⏹️ Clima spento - blocco impostazioni disabilitato per permettere spegnimento")
-            return
-        
-        # CONTROLLO AGGIUNTIVO: Se il clima è in via di spegnimento, non interferire
-        if climate_state.state in ("unknown", "unavailable"):
-            _LOGGER.info(f"[{self.current_name}] ⏸️ Clima in stato {climate_state.state} - blocco impostazioni in pausa")
-            return
-        
+        """Ripristina le impostazioni bloccate quando cambiano - SOLO se il clima è già acceso."""
         try:
-            # PRIORITÀ: Se il timer ha impostato impostazioni temporanee, usa quelle
+            if not self._settings_locked:
+                return
+            
+            # PROTEZIONE SPEGNIMENTO
+            if self._shutdown_in_progress:
+                _LOGGER.info(f"[{self.current_name}] ⏹️ Spegnimento in corso - blocco impostazioni disabilitato")
+                return
+            
+            # Non accendere il clima se è spento: solo mantenere le impostazioni quando è acceso
+            climate_state = self.hass.states.get(self.climate_entity)
+            if not climate_state or climate_state.state in ("off", "unknown", "unavailable"):
+                _LOGGER.info(f"[{self.current_name}] ⏹️ Clima non attivo - blocco impostazioni in pausa")
+                return
+            
+            # Determina le impostazioni target
             if self._locked_settings_override:
                 target_hvac_mode = self._locked_settings_override.get("hvac_mode")
                 target_temperature = self._locked_settings_override.get("temperature")
                 target_fan_mode = self._locked_settings_override.get("fan_mode")
                 target_preset_mode = self._locked_settings_override.get("preset_mode")
             else:
-                # Altrimenti usa le impostazioni configurate per la stagione corrente
                 season = await self._get_season()
-                
                 if season == "summer":
                     target_hvac_mode = self.get_option("hvac_mode_summer", "cool")
                     target_temperature = float(self.get_option("temperature_summer", 21))
@@ -2947,54 +2945,86 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
                     target_fan_mode = self.fan_mode_winter
                     target_preset_mode = self.get_option("preset_mode_winter", None)
                 else:
-                    # Fallback su estate
                     target_hvac_mode = self.get_option("hvac_mode_summer", "cool")
                     target_temperature = float(self.get_option("temperature_summer", 21))
                     target_fan_mode = self.fan_mode_summer
                     target_preset_mode = self.get_option("preset_mode_summer", None)
             
-            # Verifica compatibilità
+            # Verifica compatibilità modalità
             if not self._check_hvac_mode_compatibility(target_hvac_mode):
+                _LOGGER.warning(f"[{self.current_name}] 🔒 HVAC mode {target_hvac_mode} non compatibile - blocco annullato")
                 return
-                
             if target_fan_mode and not self._check_fan_mode_compatibility(target_fan_mode):
                 target_fan_mode = None
-                
             if target_preset_mode and not self._check_preset_mode_compatibility(target_preset_mode):
                 target_preset_mode = None
             
-            # Applica le impostazioni SOLO se il clima è già acceso usando la funzione robusta
-            _LOGGER.info(f"Ripristino impostazioni bloccate: HVAC={target_hvac_mode}, Temp={target_temperature}, Fan={target_fan_mode}")
-            
-            success = await self._verify_and_retry_climate_settings(
-                target_hvac_mode, 
-                target_temperature, 
-                target_fan_mode
+            # Controlla se tutto è già corretto (guard anti-loop: evita che i nostri
+            # stessi service call ripartano un altro ripristino).
+            curr = self.hass.states.get(self.climate_entity)
+            if curr and curr.state not in ("off", "unknown", "unavailable"):
+                curr_hvac = curr.state
+                curr_temp = curr.attributes.get("temperature")
+                curr_fan = curr.attributes.get("fan_mode")
+                hvac_ok = curr_hvac == target_hvac_mode
+                temp_ok = curr_temp is not None and abs(float(curr_temp) - float(target_temperature)) < 0.5
+                fan_ok = (not target_fan_mode) or (curr_fan == target_fan_mode)
+                if hvac_ok and temp_ok and fan_ok:
+                    _LOGGER.debug(f"[{self.current_name}] 🔒 Impostazioni già corrette, nessun ripristino necessario")
+                    return
+
+            # Ripristino COMPLETO: applica sempre tutte le impostazioni bloccate insieme.
+            # Logica casa vacanze: qualunque cambio del telecomando deve essere annullato.
+            # Si applica tutto in blocco per coprire il caso in cui l'integrazione resetti
+            # la temperatura al cambio modalità, o il telecomando cambi più parametri insieme.
+            _LOGGER.info(f"[{self.current_name}] 🔒 Ripristino completo impostazioni bloccate → HVAC={target_hvac_mode}, Temp={target_temperature}°C, Fan={target_fan_mode}")
+
+            # 1. Modalità HVAC
+            await self.hass.services.async_call(
+                'climate', 'set_hvac_mode',
+                {'entity_id': self.climate_entity, 'hvac_mode': target_hvac_mode},
+                blocking=False
             )
-            
-            if not success:
-                _LOGGER.warning("Fallimento nel ripristino delle impostazioni bloccate")
-            
-            # Applica preset mode separatamente se specificato (non gestito da _verify_and_retry_climate_settings)
+            # Pausa: alcune integrazioni resettano la temperatura al cambio modalità
+            await asyncio.sleep(0.5)
+
+            # 2. Temperatura (sempre, anche se apparentemente corretta,
+            #    per annullare il reset silenzioso dell'integrazione)
+            await self.hass.services.async_call(
+                'climate', 'set_temperature',
+                {'entity_id': self.climate_entity, 'temperature': target_temperature},
+                blocking=False
+            )
+            await asyncio.sleep(0.3)
+
+            # 3. Ventola (se configurata)
+            if target_fan_mode:
+                await self.hass.services.async_call(
+                    'climate', 'set_fan_mode',
+                    {'entity_id': self.climate_entity, 'fan_mode': target_fan_mode},
+                    blocking=False
+                )
+
+            # 4. Preset mode (se configurato)
             if target_preset_mode:
                 try:
                     await self.hass.services.async_call(
                         'climate', 'set_preset_mode',
-                        {'entity_id': self.climate_entity, 'preset_mode': target_preset_mode}
+                        {'entity_id': self.climate_entity, 'preset_mode': target_preset_mode},
+                        blocking=False
                     )
                 except Exception as e:
-                    _LOGGER.warning(f"Errore nell'applicazione preset mode {target_preset_mode}: {e}")
-                    
-        except Exception:
-            pass
+                    _LOGGER.warning(f"[{self.current_name}] Errore nell'applicazione preset mode {target_preset_mode}: {e}")
+
+        except Exception as e:
+            _LOGGER.error(f"[{self.current_name}] Errore ripristino impostazioni bloccate: {e}")
+        finally:
+            # Resetta SEMPRE il flag alla fine, indipendentemente da come usciamo
+            self._settings_restore_in_progress = False
     
     async def _check_and_restore_locked_settings_debounced(self, *_):
-        """Versione con debounce per il ripristino delle impostazioni bloccate dal listener aggressivo"""
-        try:
-            await self._check_and_restore_locked_settings()
-        finally:
-            # Reset flag sempre, anche in caso di errore
-            self._settings_restore_in_progress = False
+        """Alias mantenuto per compatibilità - chiama direttamente la funzione principale."""
+        await self._check_and_restore_locked_settings()
     
     def set_locked_settings_override(self, hvac_mode, temperature, fan_mode, preset_mode=None):
         """Imposta impostazioni temporanee da proteggere con il blocco (per timer ciclico)"""
