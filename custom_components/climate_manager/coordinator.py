@@ -393,9 +393,8 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         if self._shutdown_in_progress:
             return
             
-        # Se sincronizzazione in corso, timer attivo, o ripristino già in corso, non interferire
-        if (self._syncing_from_binary_sensor or self._timer_in_action or 
-            self._settings_restore_in_progress):
+        # Se sincronizzazione in corso o timer attivo, non interferire
+        if (self._syncing_from_binary_sensor or self._timer_in_action):
             return
         
         # DEBOUNCE: evita chiamate troppo frequenti (minimo 3 secondi tra ripristini)
@@ -423,15 +422,11 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         old_fan = old.attributes.get("fan_mode")
         new_fan = new.attributes.get("fan_mode")
         
-        # Se qualcosa è cambiato, ripristina con debounce
+        # Se qualcosa è cambiato, schedula il ripristino (stesso comportamento del check periodico)
         if (old_temp != new_temp) or (old_hvac != new_hvac) or (old_fan != new_fan):
-            _LOGGER.info(f"[{self.current_name}] 🔒 BLOCCO AGGRESSIVO: Rilevato cambiamento - Temp: {old_temp}→{new_temp}, HVAC: {old_hvac}→{new_hvac}, Fan: {old_fan}→{new_fan}")
-            
-            # Imposta flag e timestamp
-            self._settings_restore_in_progress = True
+            _LOGGER.info(f"[{self.current_name}] 🔒 BLOCCO: Rilevato cambiamento - Temp: {old_temp}→{new_temp}, HVAC: {old_hvac}→{new_hvac}, Fan: {old_fan}→{new_fan}")
             self._last_restore_time = current_time
             
-            # Ripristina con un piccolo delay - usa @callback wrapper (richiesto da async_call_later in HA recente)
             from homeassistant.helpers.event import async_call_later
             @callback
             def _schedule_locked_restore(_now=None):
@@ -2919,7 +2914,13 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
 
     async def _check_and_restore_locked_settings(self, *_):
         """Ripristina le impostazioni bloccate quando cambiano - SOLO se il clima è già acceso."""
+        # MUTEX: previene esecuzioni concorrenti (stesso comportamento per check reattivo e periodico)
+        if self._settings_restore_in_progress:
+            _LOGGER.debug(f"[{self.current_name}] 🔒 Ripristino già in corso, skip")
+            return
         try:
+            self._settings_restore_in_progress = True
+            
             if not self._settings_locked:
                 return
             
@@ -2967,58 +2968,62 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             if target_preset_mode and not self._check_preset_mode_compatibility(target_preset_mode):
                 target_preset_mode = None
             
-            # Controlla se tutto è già corretto (guard anti-loop: evita che i nostri
-            # stessi service call ripartano un altro ripristino).
+            # Controlla se tutto è già corretto (guard anti-loop).
             curr = self.hass.states.get(self.climate_entity)
             if curr and curr.state not in ("off", "unknown", "unavailable"):
                 curr_hvac = curr.state
                 curr_temp = curr.attributes.get("temperature")
                 curr_fan = curr.attributes.get("fan_mode")
                 hvac_ok = curr_hvac == target_hvac_mode
-                temp_ok = curr_temp is not None and abs(float(curr_temp) - float(target_temperature)) < 0.5
+                # Se il device non riporta temperatura (es. modalità dry/fan_only su alcuni device),
+                # considera la temperatura come già corretta per evitare loop infiniti.
+                if curr_temp is None:
+                    temp_ok = True
+                else:
+                    temp_ok = abs(float(curr_temp) - float(target_temperature)) < 0.5
                 fan_ok = (not target_fan_mode) or (curr_fan == target_fan_mode)
                 if hvac_ok and temp_ok and fan_ok:
                     _LOGGER.debug(f"[{self.current_name}] 🔒 Impostazioni già corrette, nessun ripristino necessario")
                     return
 
-            # Ripristino COMPLETO: applica sempre tutte le impostazioni bloccate insieme.
-            # Logica casa vacanze: qualunque cambio del telecomando deve essere annullato.
-            # Si applica tutto in blocco per coprire il caso in cui l'integrazione resetti
-            # la temperatura al cambio modalità, o il telecomando cambi più parametri insieme.
-            _LOGGER.info(f"[{self.current_name}] 🔒 Ripristino completo impostazioni bloccate → HVAC={target_hvac_mode}, Temp={target_temperature}°C, Fan={target_fan_mode}")
+            # Ripristino mirato: applica solo i comandi necessari.
+            # REGOLA FONDAMENTALE: non mandare set_hvac_mode se la modalità è già corretta.
+            # Molte integrazioni (Midea, LocalTuya, ecc.) ignorano set_temperature se arriva
+            # troppo vicino a set_hvac_mode perché il device è ancora occupato a processarlo.
+            _LOGGER.info(f"[{self.current_name}] 🔒 Ripristino → HVAC={'OK' if hvac_ok else target_hvac_mode}, Temp={'OK' if temp_ok else str(target_temperature)+'°C'}, Fan={'OK' if fan_ok else target_fan_mode}")
 
-            # Marca l'inizio del ripristino: i successivi state change dell'integrazione
-            # (es. breve 'off' durante cambio modalità) devono essere ignorati da _handle_climate_state.
-            # 5 secondi coprono i service call blocking=False + propagazione stato.
             self._lock_restore_until = asyncio.get_event_loop().time() + 5.0
 
-            # 1. Modalità HVAC
-            await self.hass.services.async_call(
-                'climate', 'set_hvac_mode',
-                {'entity_id': self.climate_entity, 'hvac_mode': target_hvac_mode},
-                blocking=False
-            )
-            # Pausa: alcune integrazioni resettano la temperatura al cambio modalità
-            await asyncio.sleep(0.5)
+            if not hvac_ok:
+                # Modalità sbagliata: manda il comando modalità, poi attendi prima di impostare temp
+                await self.hass.services.async_call(
+                    'climate', 'set_hvac_mode',
+                    {'entity_id': self.climate_entity, 'hvac_mode': target_hvac_mode},
+                    blocking=False
+                )
+                # Delay più lungo: alcune integrazioni resettano la temp al cambio modalità
+                await asyncio.sleep(1.0)
+                # Temperatura sempre dopo un cambio modalità (copre il reset silenzioso)
+                await self.hass.services.async_call(
+                    'climate', 'set_temperature',
+                    {'entity_id': self.climate_entity, 'temperature': target_temperature},
+                    blocking=True
+                )
+            elif not temp_ok:
+                # Solo la temperatura è sbagliata: manda SOLO set_temperature, nessuna interferenza
+                await self.hass.services.async_call(
+                    'climate', 'set_temperature',
+                    {'entity_id': self.climate_entity, 'temperature': target_temperature},
+                    blocking=True
+                )
 
-            # 2. Temperatura con blocking=True: assicura che arrivi al device
-            #    DOPO che il comando hvac_mode è stato processato dall'integrazione.
-            await self.hass.services.async_call(
-                'climate', 'set_temperature',
-                {'entity_id': self.climate_entity, 'temperature': target_temperature},
-                blocking=True
-            )
-            await asyncio.sleep(0.3)
-
-            # 3. Ventola (se configurata)
-            if target_fan_mode:
+            if target_fan_mode and not fan_ok:
                 await self.hass.services.async_call(
                     'climate', 'set_fan_mode',
                     {'entity_id': self.climate_entity, 'fan_mode': target_fan_mode},
                     blocking=False
                 )
 
-            # 4. Preset mode (se configurato)
             if target_preset_mode:
                 try:
                     await self.hass.services.async_call(
@@ -3034,8 +3039,8 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
         finally:
             # Resetta SEMPRE il flag alla fine, indipendentemente da come usciamo
             self._settings_restore_in_progress = False
-            # Pianifica il prossimo controllo periodico (safety net)
-            self._schedule_next_lock_check()
+            # NON ri-pianificare qui: il timer periodico si auto-ri-pianifica in _do_periodic_check.
+            # Chiamare _schedule_next_lock_check() qui causerebbe doppio scheduling esponenziale.
     
     def _start_lock_periodic_check(self):
         """Avvia il controllo periodico delle impostazioni bloccate (safety net ogni 2 minuti)."""
@@ -3049,9 +3054,14 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             self._lock_periodic_cancel = None
 
     def _schedule_next_lock_check(self):
-        """Pianifica il prossimo controllo periodico (solo se lock attivo e clima acceso)."""
+        """Pianifica il prossimo controllo periodico (solo se lock attivo).
+        Cancella sempre il timer precedente prima di crearne uno nuovo."""
         if not self._settings_locked:
             return
+        # Cancella l'eventuale timer precedente per evitare accumulo
+        if self._lock_periodic_cancel:
+            self._lock_periodic_cancel()
+            self._lock_periodic_cancel = None
         interval_s = 120  # 2 minuti
 
         @callback
@@ -3063,7 +3073,7 @@ class ClimateManagerCoordinator(DataUpdateCoordinator):
             if climate_state and climate_state.state not in ("off", "unknown", "unavailable"):
                 _LOGGER.debug(f"[{self.current_name}] 🔒 Controllo periodico blocco impostazioni")
                 self.hass.async_create_task(self._check_and_restore_locked_settings())
-            # Ri-pianifica il prossimo controllo
+            # Ri-pianifica il PROSSIMO ciclo (un solo timer attivo alla volta)
             self._schedule_next_lock_check()
 
         self._lock_periodic_cancel = async_call_later(self.hass, interval_s, _do_periodic_check)
