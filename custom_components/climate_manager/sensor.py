@@ -492,6 +492,8 @@ class ClimateManagerTimerOffSensor(Entity):
                 self.async_write_ha_state()
                 
             # CONTROLLO TRIPLO prima di eseguire l'azione
+            import logging
+            logger = logging.getLogger(__name__)
             if self._remaining_seconds <= 0 and self._is_running and not self._timer_task.cancelled():
                 
                 # CONTROLLO CRITICO: verifica se fermato prima di qualsiasi azione
@@ -596,160 +598,70 @@ class ClimateManagerTimerOffSensor(Entity):
                             )
                         
                         
-                except Exception:
+                except Exception as e:
                     # Reset flag anche in caso di errore
                     self._coordinator._timer_in_action = False
-                    pass
-                
-                # LOGICA CICLICA: Se la modalità non è "off", riavvia il timer invece di spegnerlo
-                if timer_off_mode != "off":
-                    
-                    # CONTROLLO CRITICO: verifica se il timer è stato fermato durante l'azione
-                    if not self._is_running:
-                        return
-                    
-                    # Notifica riavvio timer
+                    logger.error(f"[{self._coordinator.current_name}] Errore durante applicazione impostazioni timer OFF: {e}")
 
-                    
+                # Notifica di completamento (solo per spegnimento definitivo, coerente col comportamento originale)
+                try:
                     from .const import get_alexa_messages
-                # Usa la lingua configurata nel componente, non quella di Home Assistant
-                lang = (self._coordinator.options.get("lingua") or 
-                       self._coordinator.config.get("lingua", "it"))
-                messages = get_alexa_messages(lang)
-                
-                # Traduci la modalità per il messaggio
-                mode_translations = {
-                    "it": {
-                        "heat": "riscaldamento",
-                        "cool": "raffreddamento", 
-                        "heat_cool": "riscaldamento/raffreddamento",
-                        "auto": "automatico",
-                        "dry": "deumidificazione",
-                        "fan_only": "ventilazione"
-                    },
-                    "en": {
-                        "heat": "heating",
-                        "cool": "cooling",
-                        "heat_cool": "heating/cooling", 
-                        "auto": "automatic",
-                        "dry": "dry",
-                        "fan_only": "fan only"
-                    }
-                }
-                
-                mode_text = mode_translations.get(lang, mode_translations["en"]).get(timer_off_mode, timer_off_mode)
-                
-                template = messages.get("timer_off_mode_executed", "Timer di spegnimento eseguito in {{room}}, passaggio a modalità {{mode}}.")
-                message = self._coordinator._render_message(
-                    template,
-                    room=self._coordinator.current_name,
-                    mode=mode_text
-                )
-                
-                # Non inviare notifica per cambio modalità - solo per spegnimento definitivo
-                # await self._coordinator._notify(message, "timer_off_executed")
-                
-                # CONTROLLO CRITICO: verifica di nuovo se il timer è stato fermato
-                if not self._is_running:
-                    return
-                
-                # CONTROLLO CRITICO: verifica se il clima è ancora acceso prima di riavviare
-                climate_state = self._coordinator.hass.states.get(self._coordinator.climate_entity)
-                if not climate_state or climate_state.state == "off":
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.info(f"[{self._coordinator.current_name}] Timer ciclico NON riavviato: clima spento")
-                    self._is_running = False
-                    self._remaining_seconds = 0
-                    self.async_write_ha_state()
-                    return
-                
-                    # Riavvia il timer ciclico
-                    minutes = self._coordinator.get_option("timer_off_minutes", 60)
-                    self._total_seconds = minutes * 60
-                    self._remaining_seconds = self._total_seconds
-                    # Il timer resta attivo (_is_running rimane True)
-                    self.async_write_ha_state()
-                    
-                    # Rimuovi il flag dopo 5 secondi per permettere al blocco impostazioni di riattivare
-                    from homeassistant.helpers.event import async_call_later
-                    async_call_later(self._coordinator.hass, 5, self._reset_timer_action_flag)
-                    
-                # CONTROLLO FINALE: verifica un'ultima volta prima di riavviare il countdown
-                if not self._is_running:
-                    return
-                
-                # CONTROLLO AGGIUNTIVO: verifica se il task è stato cancellato
-                if self._timer_task and self._timer_task.cancelled():
-                    return
-                
-                # CONTROLLO FINALE ANTI-DUPLICAZIONE: verifica se ci sono già timer attivi
-                import logging
-                logger = logging.getLogger(__name__)
-                
-                # Controlla se il timer switch è ancora attivo
-                name = self._coordinator.current_name
-                import re
-                name_slug = re.sub(r'[^\w]', '_', str(name).lower())
-                name_slug = re.sub(r'_+', '_', name_slug).strip('_')
-                switch_id = f"switch.climate_manager_timer_off_{name_slug}"
-                
-                switch_state = self._coordinator.hass.states.get(switch_id)
-                if not switch_state or switch_state.state == "off":
-                    logger.info(f"[{self._coordinator.current_name}] Timer ciclico NON riavviato: switch timer disattivato")
-                    self._is_running = False
-                    self._remaining_seconds = 0
-                    self.async_write_ha_state()
-                    return
-                
-                # Invece di ricorsione diretta, usa un nuovo task per evitare race conditions
-                logger.info(f"[{self._coordinator.current_name}] Timer ciclico riavviato per {minutes} minuti")
-                self._timer_task = asyncio.create_task(self._run_countdown())
-                return
-                
-            else:
-                # Modalità "off" - comportamento standard: spegni definitivamente
-                # Spegni lo switch timer associato
-                name = self._coordinator.current_name
-                import re
-                name_slug = re.sub(r'[^\w]', '_', str(name).lower())
-                name_slug = re.sub(r'_+', '_', name_slug).strip('_')
-                switch_id = f"switch.climate_manager_timer_off_{name_slug}"
-                
-                await self._coordinator.hass.services.async_call(
-                    'switch', 'turn_off', 
-                    {'entity_id': switch_id}
-                )
-                
-                # Notifica spegnimento definitivo
-                from .const import get_alexa_messages
-                # Usa la lingua configurata nel componente, non quella di Home Assistant
-                lang = (self._coordinator.options.get("lingua") or 
-                       self._coordinator.config.get("lingua", "it"))
-                messages = get_alexa_messages(lang)
-                
-                template = messages.get("timer_off_executed", "Timer di spegnimento eseguito in {{room}}, clima spento.")
-                message = self._coordinator._render_message(
-                    template,
-                    room=self._coordinator.current_name
-                )
-                
-                await self._coordinator._notify(message, "timer_off_executed")
-                
-                # Rimuovi il flag anche per spegnimento definitivo
+                    lang = (self._coordinator.options.get("lingua") or
+                           self._coordinator.config.get("lingua", "it"))
+                    messages = get_alexa_messages(lang)
+
+                    if timer_off_mode == "off":
+                        template = messages.get("timer_off_executed", "Timer di spegnimento eseguito in {{room}}, clima spento.")
+                        message = self._coordinator._render_message(template, room=self._coordinator.current_name)
+                        await self._coordinator._notify(message, "timer_off_executed")
+                    # Per modalità diverse da "off" non viene inviata notifica (comportamento originale)
+                except Exception as e:
+                    logger.error(f"[{self._coordinator.current_name}] Errore invio notifica timer OFF: {e}")
+
+                # ESECUZIONE SINGOLA: il timer completa il suo ciclo una sola volta e si ferma,
+                # indipendentemente dalla modalità scelta. Per farlo ripartire occorre riaccendere
+                # manualmente il condizionatore (se auto-timer è attivo) oppure riattivare
+                # manualmente lo switch "Timer Spegnimento".
+                self._turn_off_associated_switch()
+
                 from homeassistant.helpers.event import async_call_later
                 async_call_later(self._coordinator.hass, 5, self._reset_timer_action_flag)
-            
-            # Ferma il timer
+
+            else:
+                logger.info(f"[{self._coordinator.current_name}] Timer OFF non eseguito: running={self._is_running}, remaining={self._remaining_seconds}, cancelled={self._timer_task.cancelled() if self._timer_task else 'None'}")
+
+            # Ferma SEMPRE il timer alla fine del ciclo, in ogni caso
             self._is_running = False
+            self._remaining_seconds = 0
             self.async_write_ha_state()
-                
+
         except asyncio.CancelledError:
             self._is_running = False
             self.async_write_ha_state()
             # Reset flag anche in caso di cancellazione
             self._coordinator._timer_in_action = False
             raise
+
+    def _turn_off_associated_switch(self):
+        """Spegne direttamente lo switch Timer Spegnimento associato.
+
+        Non passa dal service layer (switch.turn_off) di proposito: questo countdown
+        gira nello stesso task che lo switch cercherebbe di cancellare tramite
+        stop_timer(), causando una race condition che in certi casi lasciava lo
+        switch bloccato acceso e il countdown fermo a 00:00:00 senza mai fermarsi.
+        """
+        try:
+            entry_data = self._coordinator.hass.data.get("climate_manager", {}).get(self._coordinator.entry_id, {})
+            entities_data = entry_data.get("entities", {})
+            switch_entities = entities_data.get("switch", [])
+            for switch in switch_entities:
+                if hasattr(switch, '_attr_unique_id') and switch._attr_unique_id.endswith('_timer_off_switch'):
+                    switch._is_on = False
+                    switch.async_write_ha_state()
+                    break
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"[{self._coordinator.current_name}] Errore spegnimento switch timer OFF: {e}")
 
     async def _update_name(self):
         self.async_write_ha_state()
