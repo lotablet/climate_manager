@@ -1,7 +1,7 @@
 {
   "domain": "climate_manager",
   "name": "Climate Manager",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "config_flow": true,
   "requirements": ["aiofiles"],
   "dependencies": [],
